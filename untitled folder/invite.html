@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Royal Invitation</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(circle, #f5e6d3, #d2b48c);
+    cursor: none;
+}
+
+/* CURSOR SPOTLIGHT */
+.cursor {
+    position: fixed;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,220,150,0.3), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+/* PARTICLES */
+canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+/* INTRO */
+.intro {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+    cursor: pointer;
+}
+
+.intro h1 {
+    font-size: 2.5rem;
+    color: #6b3e26;
+}
+
+/* BOOK */
+.book {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    perspective: 2000px;
+}
+
+/* FRAME */
+.frame {
+    width: min(90vw, 500px);
+    aspect-ratio: 1236 / 1744;
+    position: relative;
+}
+
+/* COVER */
+.cover {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-origin: left;
+    transition: transform 1.5s cubic-bezier(.77,0,.18,1);
+    z-index: 3;
+}
+
+.cover.open {
+    transform: rotateY(-140deg);
+}
+
+/* PAGE */
+.page {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: 1.5s;
+}
+
+.page.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* IMAGES */
+.cover img, .page img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+}
+
+/* LEFT PANEL */
+.glass {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.25);
+    padding: 15px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: 1s;
+}
+
+.glass.show {
+    opacity: 1;
+}
+
+/* BUTTON */
+.btn {
+    position: relative;
+    padding: 10px 15px;
+    border-radius: 20px;
+    background: #6b3e26;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    overflow: hidden;
+}
+
+/* BUTTON GLOW */
+.btn:hover {
+    box-shadow: 0 0 15px #ffd700;
+    transform: scale(1.08);
+}
+
+/* RIPPLE */
+.btn::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: 0.4s;
+}
+
+.btn:active::after {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+}
+
+/* LANTERN GLOW BG */
+body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,200,120,0.2), transparent);
+    animation: glow 10s linear infinite;
+}
+
+@keyframes glow {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+}
+
+/* FIREWORK */
+.firework {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: gold;
+    border-radius: 50%;
+    animation: explode 1s ease-out forwards;
+}
+
+@keyframes explode {
+    to {
+        transform: translate(var(--x), var(--y));
+        opacity: 0;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="cursor" id="cursor"></div>
+<canvas id="particles"></canvas>
+
+<div class="intro" onclick="openInvite()">
+    <h1>💌 Tap / Swipe to Open</h1>
+</div>
+
+<div class="book" id="book">
+    <div class="frame">
+
+        <div class="cover" id="cover">
+            <img src="2.png">
+        </div>
+
+        <div class="page" id="page">
+            <img src="1.png">
+        </div>
+
+    </div>
+</div>
+
+<div class="glass" id="glass">
+    <a class="btn" href="https://maps.app.goo.gl/HmpoEQFfbRkYqJNz8?g_st=aw" target="_blank">📍 Location</a>
+    <a class="btn" href="https://wa.me/918296805723" target="_blank">📩 Whatsapp</a>
+</div>
+
+<script>
+
+/* CURSOR */
+const cursor = document.getElementById("cursor");
+document.addEventListener("mousemove", e=>{
+    cursor.style.left = e.clientX+"px";
+    cursor.style.top = e.clientY+"px";
+});
+
+/* SWIPE */
+let startY = 0;
+document.addEventListener("touchstart", e=>{
+    startY = e.touches[0].clientY;
+});
+document.addEventListener("touchend", e=>{
+    let endY = e.changedTouches[0].clientY;
+    if(startY - endY > 50){
+        openInvite();
+    }
+});
+
+/* PARTICLES */
+const canvas = document.getElementById("particles");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles=[];
+for(let i=0;i<100;i++){
+    particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2,d:Math.random()});
+}
+
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="rgba(255,215,150,0.8)";
+    particles.forEach(p=>{
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fill();
+        p.y+=p.d;
+        if(p.y>canvas.height)p.y=0;
+    });
+}
+setInterval(draw,30);
+
+/* OPEN */
+function openInvite(){
+    document.querySelector(".intro").style.display="none";
+    document.getElementById("book").style.display="flex";
+
+    setTimeout(()=>cover.classList.add("open"),200);
+    setTimeout(()=>page.classList.add("show"),800);
+    setTimeout(()=>{
+        glass.classList.add("show");
+        fireworks();
+    },1400);
+}
+
+/* FIREWORK */
+function fireworks(){
+    for(let i=0;i<40;i++){
+        let f=document.createElement("div");
+        f.className="firework";
+        f.style.left=window.innerWidth/2+"px";
+        f.style.top=window.innerHeight/2+"px";
+        f.style.setProperty('--x',(Math.random()*400-200)+"px");
+        f.style.setProperty('--y',(Math.random()*400-200)+"px");
+        document.body.appendChild(f);
+        setTimeout(()=>f.remove(),1000);
+    }
+}
+
+</script>
+
+</body>
+</html>
